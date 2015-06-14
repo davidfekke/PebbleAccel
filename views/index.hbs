@@ -26,8 +26,8 @@
 <script>
   var socket = io();
   socket.on('acceldata', function (data) {
-    $('#x-axis').text('x: ' + data.x);
-    $('#y-axis').text('y: ' + data.y);
-    $('#z-axis').text('z: ' + data.z);
+    $('#x-axis').text(data.x);
+    $('#y-axis').text(data.y);
+    $('#z-axis').text(data.z);
   });
 </script>
