@@ -7,6 +7,6 @@ a {
   color: #00B7FF;
 }
 
-x-axis, z-axis, y-axis {
+#x-axis, #z-axis, #y-axis {
   font: 48px "Futura Extra Bold", Helvetica Bold, Arial, sans-serif;
 }
