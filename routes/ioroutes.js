@@ -19,6 +19,11 @@ var httpsOptions = {
 	}
 };
 
+var leftServo = 0;
+var rightServo = 0;
+var timerId;
+var lastUpdated;
+
 function convertLRValuesToLRServo(motorObject) {
   var left = 90, right = 90;
   left = (motorObject.L + 100) * 0.9;
@@ -29,7 +34,7 @@ function convertLRValuesToLRServo(motorObject) {
   };
 }
 
-function callSparkService(postData, res) {
+function callSparkService(postData) {
 	var post_data = postData;
 	httpsOptions.headers['Content-Length'] = post_data.length;
 	var retValue = "";
@@ -37,14 +42,10 @@ function callSparkService(postData, res) {
 		console.log('STATUS: ' + response.statusCode);
 		response.setEncoding('utf8');
 		response.on('data', function (chunk) {
-			//console.log('BODY: ' + chunk);
 			retValue += chunk;
 		});
 		response.on('end', function() {
 			console.log('request has ended.');
-			//console.log(body);
-			//retValue = JSON.parse(body);
-			res.send(retValue);
 		});
 	});
 	
@@ -97,6 +98,20 @@ function getServoPower(x, y) {
 	return { "L": left, "R": right };
 }
 
+function particleServiceTimer(){
+	var post_data = querystring.stringify({
+    		'access_token': accessToken,
+    		'params': leftServo + ',' + rightServo
+	  });
+      callSparkService(post_data);
+	  console.log('Sending to spark service.');
+	  if (Date.now() - lastUpdated > 5000) {
+		  clearInterval(timerId);
+		  timerId = null;
+	  }
+}
+
+
 module.exports = function(io) {
     var router = express.Router();
 
@@ -110,12 +125,15 @@ module.exports = function(io) {
       var servoPower = convertLRValuesToLRServo(getServoPower(xaxis, yaxis));
       // Convert L R values to CW and CCW servo values. i.e. -100 = 0, 100 = 180
       console.log(servoPower);
+	  leftServo = servoPower.L;
+	  rightServo = servoPower.R;
+	  lastUpdated = Date.now();
       io.emit('acceldata', { "x": req.params.x, "y": req.params.y, "z": req.params.z });
-      var post_data = querystring.stringify({
-    		'access_token': accessToken,
-    		'params': servoPower.L + ',' + servoPower.R
-    	});
-    	callSparkService(post_data, res);
+	  if (!timerId) {
+		timerId = setInterval(particleServiceTimer, 1000);	  
+	  }
+	  
+      res.send({ 'Calling Particle Service': true });
     });
     
     return router;
